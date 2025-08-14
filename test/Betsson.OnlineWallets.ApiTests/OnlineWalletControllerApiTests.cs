@@ -1,4 +1,4 @@
-namespace Betsson.OnlineWallets.ApiTests;
+namespace Betsson.OnlineWallets.ApiTests
 {
     public class OnlineWalletControllerApiTests
 {
