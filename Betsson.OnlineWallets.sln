@@ -12,6 +12,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Betsson.OnlineWallets.Data", "src\Betsson.OnlineWallets.Data\Betsson.OnlineWallets.Data.csproj", "{4D65DE1B-3A57-4E78-981D-2D1279995F6D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C88DD14-F956-CE84-757C-A364CCF449FC}"
+	ProjectSection(SolutionItems) = preProject
+		xunit.runner.json = xunit.runner.json
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Betsson.OnlineWallets.UnitTests", "test\Betsson.OnlineWallets.UnitTests\Betsson.OnlineWallets.UnitTests.csproj", "{117FFDF1-D02B-4007-95CA-D48F731E8885}"
 EndProject
@@ -97,5 +100,8 @@ Global
 		{4D65DE1B-3A57-4E78-981D-2D1279995F6D} = {07962A7A-1196-4703-9F59-D710D906DCAB}
 		{117FFDF1-D02B-4007-95CA-D48F731E8885} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 		{4B26EF69-E86F-4155-BA54-7DC9802D620A} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A9A28F3E-22A4-4A47-BF1D-1D1F5313DD7C}
 	EndGlobalSection
 EndGlobal
