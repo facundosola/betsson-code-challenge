@@ -19,6 +19,24 @@ namespace Betsson.OnlineWallets.UnitTests
         }
 
         [Fact, Trait("Method", "DepositFundsAsync")]
+        public async Task Deposit_WithDecimals_ProcessCorrectly()
+        {
+            //Arrange
+            var initialBalance = 197.13344m;
+            var walletEntry = new OnlineWalletEntry { Amount = 0, BalanceBefore = initialBalance };
+            _mockWalletRepo.Setup(walletrepo => walletrepo.GetLastOnlineWalletEntryAsync())
+                .ReturnsAsync(walletEntry);
+
+            //Act
+            var transferAmount = new Deposit { Amount = 524.74m };
+            var actualBalance = await _service.DepositFundsAsync(transferAmount);
+
+            //Assert: 
+            var expectedBalance = initialBalance + transferAmount.Amount;
+            Assert.Equal(expectedBalance, (actualBalance.Amount));
+        }
+
+        [Fact, Trait("Method", "DepositFundsAsync")]
         public async Task DepositFunds_WithNegativeAmount_ShouldThrowException()
         {
 
@@ -31,53 +49,65 @@ namespace Betsson.OnlineWallets.UnitTests
             });
 
         }
+
         [Fact, Trait("Method", "DepositFundsAsync")]
         public async Task DepositFundsAsync_WithValidAmount_IncrementsBalanceCorrectly()
         {
-            //arrange - setup mock
+            //Arrange
             var initialBalance = 300m;
             _mockWalletRepo.Setup(walletrepo => walletrepo.GetLastOnlineWalletEntryAsync())
                 .ReturnsAsync(new OnlineWalletEntry { Amount = 0, BalanceBefore = initialBalance });
 
+            //Act
             var transferAmount = new Deposit { Amount = 20m };
             var actualBalance = await _service.DepositFundsAsync(transferAmount);
+
+            //Assert 
             var expectedBalance = initialBalance + transferAmount.Amount;
-            //Assert: 
             Assert.Equal(expectedBalance, (actualBalance.Amount));
         }
+
+        //overflow exception
         [Fact, Trait("Method", "DepositFundsAsync")]
-        public async Task Deposit_WithDecimals_ProcessCorrectly()
+        public async Task DepositFundsAsync_WithMaxValue_ShouldThrownOverflowException()
         {
-            //arrange - setup mock
-            var initialBalance = 197.13344m;
-            var walletEntry = new OnlineWalletEntry { Amount = initialBalance, BalanceBefore = 0 };
-            _mockWalletRepo.Setup(walletrepo => walletrepo.GetLastOnlineWalletEntryAsync())
-                .ReturnsAsync(walletEntry);
-
-            var transferAmount = new Deposit { Amount = 524.74m };
-            var result = await _service.DepositFundsAsync(transferAmount);
-
-            var expectedBalance = initialBalance + transferAmount.Amount;
-            //Assert: 
-            Assert.Equal(expectedBalance, (result.Amount));
+            var initialBalance = decimal.MaxValue - 1;
+            _mockWalletRepo.Setup(walletRepo => walletRepo.GetLastOnlineWalletEntryAsync()).ReturnsAsync(new OnlineWalletEntry { BalanceBefore = initialBalance });
+            var transferAmount = new Deposit { Amount = 2 };
+            await Assert.ThrowsAsync<OverflowException>(async () =>
+            {
+                await _service.DepositFundsAsync(transferAmount);
+            });
         }
 
-        [Fact, Trait("Method", "GetBalanceAsync")]
-        public async Task GetBalance_WhitNoTransactions_ReturnsZero()
+        [Fact, Trait("Method", "DepositFundsAsync")]
+        public async Task DepositFundsAsync_WithExactMaxValue_ShouldSucced()
         {
+            _mockWalletRepo.Setup(mwr => mwr.GetLastOnlineWalletEntryAsync())
+                .ReturnsAsync((OnlineWalletEntry?)null);
+            var deposit = new Deposit { Amount = decimal.MaxValue };
+            var result = await _service.DepositFundsAsync(deposit);
+            Assert.Equal(decimal.MaxValue, result.Amount);
+        }
+
+
+        [Fact, Trait("Method", "GetBalanceAsync")]
+        public async Task GetBalance_WhenNoTransactionsExist_ReturnsZero()
+        {
+
             //Arrange: Mock the wallet to return null, simulating no transactions.
             _mockWalletRepo.Setup(walletRepo => walletRepo.GetLastOnlineWalletEntryAsync()).ReturnsAsync((OnlineWalletEntry?)null);
+            var expectedBalance = 0;
 
             //Act: call the service method 
-            var balance = await _service.GetBalanceAsync();
+            var actualBalance = await _service.GetBalanceAsync();
 
             //Assert: Verify that returns balance is 0 
-            Assert.Equal(0, balance.Amount);
+            Assert.Equal(expectedBalance, actualBalance.Amount);
 
         }
 
-
-        [Fact, Trait("Method", "GetBalanceAsync")]
+        [Fact(), Trait("Method", "GetBalanceAsync")]
         public async Task GetBalance_WhenWalletHasTransaction_ReturnsSumOfBalanceBeforeAndAmount()
         {
             var _amount = 100;
@@ -94,17 +124,6 @@ namespace Betsson.OnlineWallets.UnitTests
             var expectedBalance = _amount + _balanceBefore;
             Assert.Equal(expectedBalance, balance.Amount);
         }
-
-        //TODO: Agregate more complex scenarios after finishing positive and negative cases. 
-        //public async Task DepositFundsAsyn_WithDecimalAmount_UpdatesBalanceCorrectly()
-        //{
-        //    //Arrange: Mock walle with balance 
-        //    _mockWalletRepo.Setup(walletRepo =>   );
-
-        //    //act 
-
-        //    //arrange
-        //}
 
         [Fact, Trait("Method", "WithdrawFundsAsync")]
         public async Task Withdrawal_DecrementsBalanceCorrectly()
@@ -133,6 +152,7 @@ namespace Betsson.OnlineWallets.UnitTests
             _mockWalletRepo.Verify(walletRepo => walletRepo.InsertOnlineWalletEntryAsync(It.Is<OnlineWalletEntry>(entry => entry.Amount == -withdrawalAmount.Amount && entry.BalanceBefore == _balanceBefore)), Times.Once);
 
         }
+
         [Fact, Trait("Method", "WithdrawFundsAsync")]
         public async Task Withdrawal_WithInsufficientFunds_ThrowsException()
         {
@@ -157,8 +177,9 @@ namespace Betsson.OnlineWallets.UnitTests
         public async Task Withdrawal_WithZeroAmount()
         {
             //Arrange
+            var initialBalance = 488.111m;
             _mockWalletRepo.Setup(walletRepo => walletRepo.GetLastOnlineWalletEntryAsync())
-                .ReturnsAsync(new OnlineWalletEntry { Amount = 488.111m, BalanceBefore = 0 });
+                .ReturnsAsync(new OnlineWalletEntry { Amount = 0, BalanceBefore = initialBalance });
 
             var zeroWithdrawal = new Withdrawal { Amount = 0 };
 
@@ -166,7 +187,7 @@ namespace Betsson.OnlineWallets.UnitTests
             var result = await _service.WithdrawFundsAsync(zeroWithdrawal);
 
             //Assert
-            Assert.Equal(488.111m, result.Amount);
+            Assert.Equal(initialBalance, result.Amount);
 
             _mockWalletRepo.Verify(walletRepo => walletRepo.InsertOnlineWalletEntryAsync(It.IsAny<OnlineWalletEntry>()), Times.Once);
         }
@@ -205,13 +226,21 @@ namespace Betsson.OnlineWallets.UnitTests
             _mockWalletRepo.Verify(repo => repo.InsertOnlineWalletEntryAsync(
                     It.Is<OnlineWalletEntry>(entry => entry.Amount == -initialBalance && entry.BalanceBefore == initialBalance)), Times.Once);
 
-            // Verifica que el nuevo saldo es 0
+
             Assert.Equal(0, newBalance.Amount);
 
         }
 
+        [Fact, Trait("Method", "WithdrawFundsAsync")]
+        public async Task WithdrawFundsAsync_WithMaxValueBalanceAndFullWithdrawal_ShouldSucced()
+        {
 
+            _mockWalletRepo.Setup(mwr => mwr.GetLastOnlineWalletEntryAsync())
+                .ReturnsAsync(new OnlineWalletEntry { BalanceBefore = decimal.MaxValue });
+            var withdrawal = new Withdrawal { Amount = decimal.MaxValue };
+            var result = await _service.WithdrawFundsAsync(withdrawal);
+            Assert.Equal(0, result.Amount);
 
-
+        }
     }
 }
