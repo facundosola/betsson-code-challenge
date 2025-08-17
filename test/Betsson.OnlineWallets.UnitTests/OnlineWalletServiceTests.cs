@@ -12,6 +12,12 @@ namespace Betsson.OnlineWallets.UnitTests
     {
         private readonly Mock<IOnlineWalletRepository> _mockWalletRepo;
         private readonly OnlineWalletService _service;
+
+        private void SetupWalletBalance(decimal balance)
+        {
+            _mockWalletRepo.Setup(r => r.GetLastOnlineWalletEntryAsync())
+                .ReturnsAsync(new OnlineWalletEntry { Amount = 0, BalanceBefore = balance });
+        }
         public OnlineWalletServiceTests()
         {
             _mockWalletRepo = new Mock<IOnlineWalletRepository>();
@@ -23,10 +29,8 @@ namespace Betsson.OnlineWallets.UnitTests
         {
             //Arrange
             var initialBalance = 197.13344m;
-            var walletEntry = new OnlineWalletEntry { Amount = 0, BalanceBefore = initialBalance };
-            _mockWalletRepo.Setup(walletrepo => walletrepo.GetLastOnlineWalletEntryAsync())
-                .ReturnsAsync(walletEntry);
-
+            SetupWalletBalance(initialBalance);
+         
             //Act
             var transferAmount = new Deposit { Amount = 524.74m };
             var actualBalance = await _service.DepositFundsAsync(transferAmount);
