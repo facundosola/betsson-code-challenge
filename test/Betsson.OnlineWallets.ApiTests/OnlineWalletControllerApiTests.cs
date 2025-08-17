@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http.Json;
 using Betsson.OnlineWallets.Web;
 
-
-
 namespace Betsson.OnlineWallets.ApiTests
 {
     public class OnlineWalletControllerApiTests : IClassFixture<WebApplicationFactory<Program>>
@@ -99,7 +97,82 @@ namespace Betsson.OnlineWallets.ApiTests
 
         }
 
-   
-    }
+        [Fact, Trait("POST", "onlineWallet/withdraw")]
+        public async Task Withdraw_WithSufficientFunds_DecrementsBalanceCorrectly()
+        {
+
+            var depositAmount = 179989.45m;
+            var depositRequest = new DepositRequest { Amount = depositAmount };
+            var depositResponse = await _client.PostAsJsonAsync("/onlinewallet/deposit", depositRequest);
+            depositResponse.EnsureSuccessStatusCode();
+
+            var currentBalanceResponse = await _client.GetFromJsonAsync<BalanceResponse>("/onlinewallet/balance");
+            Assert.NotNull(currentBalanceResponse);
+
+            var withdrawAmount = 115000.37m;
+            var withdrawRequest = new WithdrawalRequest { Amount = withdrawAmount };
+            var expectedBalance = currentBalanceResponse.Amount - withdrawAmount;
     
+
+            var withdrawResponse = await _client.PostAsJsonAsync("/onlinewallet/withdraw", withdrawRequest);
+            withdrawResponse.EnsureSuccessStatusCode();
+
+            var finalBalanceResponse = await withdrawResponse.Content.ReadFromJsonAsync<BalanceResponse>();
+            Assert.NotNull(finalBalanceResponse);
+            Assert.Equal(expectedBalance, finalBalanceResponse.Amount);
+
+        }
+        [Fact, Trait("POST", "onlineWallet/withdraw")]
+        public async Task Withdraw_WithInsufficientFunds_ReturnsBadRequest()
+        {
+            // Arrange
+            var withdrawAmount = 1000000m; // Assuming this amount exceeds the current balance
+            var withdrawRequest = new WithdrawalRequest { Amount = withdrawAmount };
+            var expectedErrorMessage = "Invalid withdrawal amount. There are insufficient funds.";
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/onlinewallet/withdraw", withdrawRequest);
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+            var problemDetails = await response.Content.ReadAsStringAsync();
+            Assert.Contains(expectedErrorMessage, problemDetails);
+        }
+        [Fact, Trait("POST", "onlineWallet/withdraw")]
+        public async Task Withdraw_WithNegativeAmount_ReturnsBadRequest()
+        {
+            // Arrange
+            var negativeWithdrawAmount = -500.00m;
+            var withdrawRequest = new WithdrawalRequest { Amount = negativeWithdrawAmount };
+            // Act
+            var response = await _client.PostAsJsonAsync("/onlinewallet/withdraw", withdrawRequest);
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+
+        }
+        [Fact]
+        public async Task Withdraw_WithZeroAmount_ReturnsSuccessAndDoesNotChangeBalance()
+        {
+            // Arrange
+           
+            var initialDeposit = 50m;
+            await _client.PostAsJsonAsync("/onlinewallet/deposit", new DepositRequest { Amount = initialDeposit });
+
+            var initialBalanceResponse = await _client.GetFromJsonAsync<BalanceResponse>("/onlinewallet/balance");
+            Assert.NotNull(initialBalanceResponse);
+            var expectedBalance = initialBalanceResponse.Amount;
+
+            var zeroWithdrawalRequest = new WithdrawalRequest { Amount = 0 };
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/onlinewallet/withdraw", zeroWithdrawalRequest);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var finalBalanceResponse = await response.Content.ReadFromJsonAsync<BalanceResponse>();
+            Assert.NotNull(finalBalanceResponse);
+
+            Assert.Equal(expectedBalance, finalBalanceResponse.Amount);
+        }
+    }
+
 }
