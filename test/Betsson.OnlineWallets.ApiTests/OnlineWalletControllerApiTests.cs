@@ -149,11 +149,10 @@ namespace Betsson.OnlineWallets.ApiTests
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
 
         }
-        [Fact]
+        [Fact, Trait("POST", "onlineWallet/withdraw")]
         public async Task Withdraw_WithZeroAmount_ReturnsSuccessAndDoesNotChangeBalance()
         {
             // Arrange
-           
             var initialDeposit = 50m;
             await _client.PostAsJsonAsync("/onlinewallet/deposit", new DepositRequest { Amount = initialDeposit });
 

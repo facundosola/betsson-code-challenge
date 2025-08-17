@@ -160,12 +160,12 @@ namespace Betsson.OnlineWallets.UnitTests
             var walletEntry = new OnlineWalletEntry { Amount = 375.80m };
             _mockWalletRepo.Setup(walletRepo => walletRepo.GetLastOnlineWalletEntryAsync()).ReturnsAsync(walletEntry);
 
-            var withdrawal = new Withdrawal { Amount = 550.55m };
+            var withdrawAmount = new Withdrawal { Amount = 550.55m };
 
             //Act
             var exception = await Assert.ThrowsAsync<InsufficientBalanceException>(async () =>
             {
-                await _service.WithdrawFundsAsync(withdrawal);
+                await _service.WithdrawFundsAsync(withdrawAmount);
             });
 
             //Assert
@@ -197,13 +197,13 @@ namespace Betsson.OnlineWallets.UnitTests
         public async Task Withdrawal_WithNegativeAmount_ThrowsException()
         {
             //Arrange
-            var negativeWithdrawal = new Withdrawal { Amount = -14000 };
+            var negativeWithdrawAmount = new Withdrawal { Amount = -14000 };
 
             //Act & Assert
             // Validation is performed at the API layer, but it's important to have a unit test here. Same case that DepositFundsAsync 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
             {
-                await _service.WithdrawFundsAsync(negativeWithdrawal);
+                await _service.WithdrawFundsAsync(negativeWithdrawAmount);
             });
         }
 
