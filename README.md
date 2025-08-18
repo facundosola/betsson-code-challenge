@@ -70,5 +70,5 @@ Due to time constraints, some of these improvements were not implemented, but th
 
 ---
 
-**Note:**  
-Special attention was given to the quality, coverage, and organization of the automated tests.
+> **Note:**  
+> Some unit tests are expected to fail. This is intentional: they highlight that certain validations (e.g., negative amounts) are currently enforced only at the API layer, but ideally should also be present in the business logic. These tests serve as documentation and a suggestion for future improvement.
