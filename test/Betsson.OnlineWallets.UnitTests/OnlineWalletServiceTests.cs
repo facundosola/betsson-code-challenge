@@ -55,7 +55,6 @@ namespace Betsson.OnlineWallets.UnitTests
             {
                 await _service.DepositFundsAsync(invalidDeposit);
             });
-
         }
 
         [Fact, Trait("Method", "DepositFundsAsync")]
